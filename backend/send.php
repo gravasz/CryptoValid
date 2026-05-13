@@ -161,6 +161,7 @@ try {
     $mail->Port       = (int)$config['smtp']['port'];
     $mail->CharSet    = 'UTF-8';
     $mail->Encoding   = 'base64';
+    $mail->setLanguage('hu', __DIR__ . '/PHPMailer/language/');
 
     if (!empty($config['debug'])) {
         $mail->SMTPDebug   = SMTP::DEBUG_SERVER;
