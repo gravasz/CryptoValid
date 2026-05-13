@@ -1,0 +1,14 @@
+# Sensitive config – never commit
+backend/config.php
+backend/send.log
+backend/vendor/
+backend/PHPMailer/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Node (ha később kerülne be)
+node_modules/

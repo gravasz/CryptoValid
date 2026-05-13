@@ -1,0 +1,1028 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CryptoValid — Egyszerű kriptováltás</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-2: #11141b;
+    --panel: #161a23;
+    --panel-2: #1c2130;
+    --border: #232838;
+    --border-strong: #2e3447;
+    --text: #e8eaf0;
+    --text-dim: #9aa1b2;
+    --text-mute: #6b7286;
+    --accent: #7cf2c8;       /* mint */
+    --accent-2: #8fb4ff;     /* periwinkle */
+    --accent-3: #f5c97a;     /* amber */
+    --danger: #ff7a8a;
+    --radius: 14px;
+    --radius-lg: 20px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
+
+  /* Background dot grid + soft glow */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(124, 242, 200, 0.08), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(143, 180, 255, 0.07), transparent 45%),
+      radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: auto, auto, 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 22px 40px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .logo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 8px;
+    line-height: 0;
+  }
+  .logo img {
+    display: block;
+    height: 52px;
+    width: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    filter:
+      drop-shadow(0.6px 0 0 currentColor)
+      drop-shadow(-0.6px 0 0 currentColor)
+      drop-shadow(0 0.4px 0 currentColor);
+    color: #2ee5a3;
+  }
+  .logo .shine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: -20%;
+    width: 14px;
+    pointer-events: none;
+    background: radial-gradient(circle at center,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(180, 255, 220, 0.55) 30%,
+      rgba(124, 242, 200, 0.15) 55%,
+      transparent 75%);
+    filter: blur(2px);
+    mix-blend-mode: screen;
+    animation: logo-shine 2s linear infinite;
+  }
+  @keyframes logo-shine {
+    0%   { left: -14%; opacity: 0; }
+    8%   { opacity: 1; }
+    50%  { opacity: 1; }
+    92%  { opacity: 1; }
+    100% { left: 108%; opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .logo .shine { animation: none; opacity: 0; }
+  }
+  .nav-actions { display: flex; gap: 10px; }
+  .btn {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .05s ease;
+  }
+  .btn:hover { background: var(--panel); border-color: #3a4159; }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary {
+    background: var(--accent);
+    color: #0b0d12;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn.primary:hover { background: #6be5b9; border-color: #6be5b9; }
+
+  /* Hero */
+  .hero {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 56px 40px 24px;
+    text-align: center;
+  }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.02);
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  }
+  h1 {
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 18px 0 14px;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  h1 .grad {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2) 60%, var(--accent-3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .sub {
+    color: var(--text-dim);
+    font-size: 17px;
+    max-width: 580px;
+    margin: 0 auto;
+    text-wrap: pretty;
+  }
+
+  /* Tiles */
+  .tiles {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 48px 40px 40px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 860px) {
+    .tiles { grid-template-columns: 1fr; padding: 32px 24px; }
+    header { padding: 18px 24px; }
+    .hero { padding: 40px 24px 12px; }
+  }
+  .tile {
+    position: relative;
+    background: linear-gradient(180deg, var(--panel) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px 24px 26px;
+    cursor: pointer;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    text-align: left;
+    overflow: hidden;
+    font-family: inherit;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 220px;
+  }
+  .tile:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-strong);
+  }
+  .tile:hover .tile-arrow { transform: translate(4px, -4px); }
+  .tile-flow {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-mute);
+  }
+  .pill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 500;
+  }
+  .pill.crypto { color: var(--accent); border-color: rgba(124,242,200,0.25); background: rgba(124,242,200,0.06); }
+  .pill.fiat   { color: var(--accent-3); border-color: rgba(245,201,122,0.25); background: rgba(245,201,122,0.06); }
+  .arrow-svg { color: var(--text-mute); width: 14px; height: 14px; flex-shrink: 0; }
+  .tile-title {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-top: auto;
+  }
+  .tile-desc {
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .tile-arrow {
+    position: absolute;
+    top: 24px; right: 24px;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    display: grid; place-items: center;
+    color: var(--text-dim);
+    transition: transform .2s ease;
+  }
+  .tile-1 { border-top: 1px solid rgba(245,201,122,0.35); }
+  .tile-2 { border-top: 1px solid rgba(124,242,200,0.35); }
+  .tile-3 { border-top: 1px solid rgba(143,180,255,0.35); }
+
+  /* Footer */
+  footer {
+    max-width: 1280px;
+    margin: 40px auto 0;
+    padding: 28px 40px 36px;
+    color: var(--text-mute);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--text-dim); text-decoration: none; }
+  footer a:hover { color: var(--text); }
+  .foot-links { display: flex; gap: 22px; }
+
+  /* Modal */
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(5, 7, 12, 0.72);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+    opacity: 0;
+    transition: opacity .18s ease;
+  }
+  .scrim.open { display: flex; opacity: 1; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 460px;
+    padding: 28px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.4);
+    transform: translateY(8px) scale(0.98);
+    transition: transform .2s ease;
+  }
+  .scrim.open .modal { transform: translateY(0) scale(1); }
+  .modal-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 4px;
+  }
+  .modal-title { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+  .modal-sub { color: var(--text-dim); font-size: 14px; margin: 4px 0 22px; }
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-mute);
+    cursor: pointer;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+  .close-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+
+  .flow-chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    margin-bottom: 18px;
+    color: var(--text-dim);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 15px;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background: var(--panel-2);
+  }
+  .field input.invalid {
+    border-color: var(--danger);
+  }
+  .err {
+    color: var(--danger);
+    font-size: 12px;
+    margin-top: 6px;
+    display: none;
+  }
+  .field.error .err { display: block; }
+  .field .hint {
+    color: var(--text-mute);
+    font-weight: 400;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .field input[name="source"], .field input[name="dest"] {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.01em;
+  }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 18px -4px 16px;
+  }
+  /* Trust check status pill */
+  .trust {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    color: var(--text-dim);
+  }
+  .trust.show { display: inline-flex; }
+  .trust .label { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10.5px; color: var(--text-mute); }
+  .trust .msg { color: var(--text); flex: 1; }
+  .trust .dot-ind { width: 8px; height: 8px; border-radius: 50%; background: var(--text-mute); flex-shrink: 0; }
+  .trust.checking .dot-ind { background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); animation: pulse 1.1s ease-in-out infinite; }
+  .trust.ok      { border-color: rgba(124,242,200,0.3); background: rgba(124,242,200,0.06); }
+  .trust.ok .dot-ind      { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .trust.caution { border-color: rgba(245,201,122,0.35); background: rgba(245,201,122,0.06); }
+  .trust.caution .dot-ind { background: var(--accent-3); box-shadow: 0 0 8px var(--accent-3); }
+  .trust.danger  { border-color: rgba(255,122,138,0.35); background: rgba(255,122,138,0.06); }
+  .trust.danger .dot-ind  { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+  .trust.unknown { border-color: var(--border-strong); }
+  .trust .recheck {
+    background: transparent; border: 1px solid var(--border-strong);
+    color: var(--text-dim); border-radius: 6px;
+    padding: 3px 8px; font-size: 11px; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .trust .recheck:hover { color: var(--text); border-color: #3a4159; }
+  .trust-disclaimer {
+    font-size: 11px;
+    color: var(--text-mute);
+    margin: 14px 0 4px;
+    display: flex; gap: 6px; align-items: flex-start;
+    line-height: 1.5;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .modal-actions {
+    display: flex; gap: 10px;
+    margin-top: 8px;
+  }
+  .modal-actions .btn { flex: 1; padding: 12px 18px; }
+  .modal-actions .btn.primary { font-size: 15px; }
+
+  /* Toast / Soon popup */
+  .soon-modal { max-width: 380px; text-align: center; padding: 32px 28px; }
+  .soon-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    margin: 0 auto 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center;
+    color: #0b0d12;
+  }
+  .soon-title { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .soon-sub { color: var(--text-dim); font-size: 14px; margin-bottom: 22px; }
+
+  /* Success state */
+  .success-state { display: none; text-align: center; padding: 8px 0; }
+  .success-state.show { display: block; }
+  .form-state.hide { display: none; }
+  .success-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    margin: 0 auto 14px;
+    background: rgba(124,242,200,0.12);
+    border: 1px solid rgba(124,242,200,0.3);
+    display: grid; place-items: center;
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo" aria-label="CryptoValid">
+      <img src="assets/cryptovalid-logo.png" alt="CryptoValid" />
+      <span class="shine" aria-hidden="true"></span>
+    </div>
+    <div class="nav-actions">
+      <button class="btn" data-soon>Belépés</button>
+      <button class="btn primary" data-soon>Regisztráció</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <span class="eyebrow"><span class="dot"></span>Béta · 2026 nyarától</span>
+    <h1>Egyszerű <span class="grad">kriptotárca validálás</span><br>néhány kattintással.</h1>
+    <p class="sub">Válaszd ki, milyen irányba szeretnél utalni. Megadod az adataid, mi pedig felvesszük veled a kapcsolatot a részletekkel.</p>
+  </section>
+
+  <section class="tiles">
+    <button class="tile tile-1" data-flow="fiat-to-crypto">
+      <div class="tile-arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+      </div>
+      <div class="tile-flow">
+        <span class="pill fiat">FIAT</span>
+        <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span class="pill crypto">CRYPTO</span>
+      </div>
+      <div>
+        <div class="tile-title">Fiat to Crypto</div>
+        <div class="tile-desc">Vásárolj kriptovalutát forintért vagy euróért, kényelmesen.</div>
+      </div>
+    </button>
+
+    <button class="tile tile-2" data-flow="crypto-to-fiat">
+      <div class="tile-arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+      </div>
+      <div class="tile-flow">
+        <span class="pill crypto">CRYPTO</span>
+        <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span class="pill fiat">FIAT</span>
+      </div>
+      <div>
+        <div class="tile-title">Crypto to Fiat</div>
+        <div class="tile-desc">Váltsd hagyományos pénzre a kriptód, gyors kifizetéssel.</div>
+      </div>
+    </button>
+
+    <button class="tile tile-3" data-flow="crypto-to-crypto">
+      <div class="tile-arrow">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7v9"/></svg>
+      </div>
+      <div class="tile-flow">
+        <span class="pill crypto">CRYPTO</span>
+        <svg class="arrow-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        <span class="pill crypto">CRYPTO</span>
+      </div>
+      <div>
+        <div class="tile-title">Crypto to Crypto</div>
+        <div class="tile-desc">Cseréld egyik tokenedet másikra, alacsony költséggel.</div>
+      </div>
+    </button>
+  </section>
+
+  <footer>
+    <div>© 2026 CryptoValid</div>
+    <div class="foot-links">
+      <a href="mailto:info@cryptovalid.eu">info@cryptovalid.eu</a>
+      <a href="#" data-soon>Adatvédelem</a>
+      <a href="#" data-soon>ÁSZF</a>
+    </div>
+  </footer>
+</div>
+
+<!-- "Hamarosan" modal -->
+<div class="scrim" id="soon-scrim" role="dialog" aria-modal="true" aria-labelledby="soon-title">
+  <div class="modal soon-modal">
+    <div class="soon-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </div>
+    <div class="soon-title" id="soon-title">Hamarosan</div>
+    <div class="soon-sub">A funkción még dolgozunk! Hamarosan indulunk, kis türelmet kérünk.</div>
+    <button class="btn primary" id="soon-close" style="width: 100%;">Rendben</button>
+  </div>
+</div>
+
+<!-- Form modal -->
+<div class="scrim" id="form-scrim" role="dialog" aria-modal="true" aria-labelledby="form-title">
+  <div class="modal">
+    <div class="form-state" id="form-state">
+      <div class="modal-head">
+        <div>
+          <div class="flow-chip" id="flow-chip"></div>
+          <div class="modal-title" id="form-title">Add meg az adataid</div>
+          <div class="modal-sub">Felvesszük veled a kapcsolatot, amint a szolgáltatás elérhető.</div>
+        </div>
+        <button class="close-btn" id="form-close" aria-label="Bezárás">✕</button>
+      </div>
+
+      <form id="contact-form" novalidate>
+        <div class="field" id="field-name">
+          <label for="name">Név</label>
+          <input type="text" id="name" name="name" autocomplete="name" required minlength="2" placeholder="Pl. Kovács Anna" />
+          <div class="err">Kérlek add meg a teljes neved (min. 2 karakter).</div>
+        </div>
+        <div class="field" id="field-email">
+          <label for="email">E-mail cím</label>
+          <input type="email" id="email" name="email" autocomplete="email" required placeholder="te@pelda.hu" />
+          <div class="err">Kérlek adj meg egy érvényes e-mail címet.</div>
+        </div>
+        <div class="divider"></div>
+        <div class="field" id="field-source">
+          <label for="source"><span id="source-label">Forrás cím</span> <span class="hint" id="source-hint"></span></label>
+          <input type="text" id="source" name="source" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="" />
+          <div class="err" id="source-err"></div>
+          <div class="trust" id="source-trust">
+            <span class="dot-ind"></span>
+            <span class="label" id="source-trust-label">Ellenőrzés</span>
+            <span class="msg" id="source-trust-msg"></span>
+            <button type="button" class="recheck" id="source-recheck" title="Ellenőrzés újra">↻</button>
+          </div>
+        </div>
+        <div class="field" id="field-dest">
+          <label for="dest"><span id="dest-label">Cél cím</span> <span class="hint" id="dest-hint"></span></label>
+          <input type="text" id="dest" name="dest" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="" />
+          <div class="err" id="dest-err"></div>
+          <div class="trust" id="dest-trust">
+            <span class="dot-ind"></span>
+            <span class="label" id="dest-trust-label">Ellenőrzés</span>
+            <span class="msg" id="dest-trust-msg"></span>
+            <button type="button" class="recheck" id="dest-recheck" title="Ellenőrzés újra">↻</button>
+          </div>
+        </div>
+        <div class="trust-disclaimer" id="trust-disclaimer" style="display:none;">
+          <span>ℹ</span>
+          <span>Előzetes, AI-alapú megbízhatóság-ellenőrzés. A végleges KYT/AML vizsgálat a feldolgozás során fut le.</span>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" id="form-cancel">Mégse</button>
+          <button type="submit" class="btn primary">Küldés</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="success-state" id="success-state">
+      <div class="success-icon">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12l4.5 4.5L19 7"/></svg>
+      </div>
+      <div class="soon-title">Köszönjük!</div>
+      <div class="soon-sub">A funkción még dolgozunk! Hamarosan indulunk, kis türelmet kérünk.</div>
+      <button class="btn primary" id="success-close" style="width: 100%;">Bezárás</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const FLOW_META = {
+    'fiat-to-crypto': {
+      label: 'Fiat to Crypto',
+      chip: 'FIAT  →  CRYPTO',
+      source: { kind: 'iban',   label: 'Forrás IBAN szám',     hint: 'amiről utalsz', placeholder: 'HU42 1177 3016 1111 1018 0000 0000' },
+      dest:   { kind: 'crypto', label: 'Cél pénztárca cím',  hint: 'amire kérod',  placeholder: '0x... vagy bc1... vagy egyéb' }
+    },
+    'crypto-to-fiat': {
+      label: 'Crypto to Fiat',
+      chip: 'CRYPTO  →  FIAT',
+      source: { kind: 'crypto', label: 'Forrás pénztárca cím', hint: 'ahonnan küldöd', placeholder: '0x... vagy bc1... vagy egyéb' },
+      dest:   { kind: 'iban',   label: 'Cél IBAN szám',          hint: 'amire kéred',   placeholder: 'HU42 1177 3016 1111 1018 0000 0000' }
+    },
+    'crypto-to-crypto': {
+      label: 'Crypto to Crypto',
+      chip: 'CRYPTO  →  CRYPTO',
+      source: { kind: 'crypto', label: 'Forrás pénztárca cím', hint: 'ahonnan küldöd', placeholder: '0x... vagy bc1... vagy egyéb' },
+      dest:   { kind: 'crypto', label: 'Cél pénztárca cím',    hint: 'amire kéred',   placeholder: '0x... vagy bc1... vagy egyéb' }
+    }
+  };
+
+  const soonScrim = document.getElementById('soon-scrim');
+  const formScrim = document.getElementById('form-scrim');
+  const flowChip  = document.getElementById('flow-chip');
+  const formState = document.getElementById('form-state');
+  const successState = document.getElementById('success-state');
+
+  let currentFlow = null;
+
+  // "Hamarosan" triggers
+  document.querySelectorAll('[data-soon]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      openModal(soonScrim);
+    });
+  });
+  document.getElementById('soon-close').addEventListener('click', () => closeModal(soonScrim));
+  soonScrim.addEventListener('click', (e) => { if (e.target === soonScrim) closeModal(soonScrim); });
+
+  // Tile triggers
+  document.querySelectorAll('.tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      currentFlow = tile.dataset.flow;
+      const meta = FLOW_META[currentFlow];
+      flowChip.textContent = meta.chip;
+      document.getElementById('form-title').textContent = meta.label;
+
+      // Configure dynamic fields
+      document.getElementById('source-label').textContent = meta.source.label;
+      document.getElementById('source-hint').textContent = '· ' + meta.source.hint;
+      document.getElementById('source').placeholder = meta.source.placeholder;
+      document.getElementById('source').dataset.kind = meta.source.kind;
+
+      document.getElementById('dest-label').textContent = meta.dest.label;
+      document.getElementById('dest-hint').textContent = '· ' + meta.dest.hint;
+      document.getElementById('dest').placeholder = meta.dest.placeholder;
+      document.getElementById('dest').dataset.kind = meta.dest.kind;
+
+      // reset
+      formState.classList.remove('hide');
+      successState.classList.remove('show');
+      document.getElementById('contact-form').reset();
+      document.querySelectorAll('.field').forEach(f => f.classList.remove('error'));
+      document.querySelectorAll('.field input').forEach(i => i.classList.remove('invalid'));
+      resetTrust('source'); resetTrust('dest');
+      openModal(formScrim);
+      setTimeout(() => document.getElementById('name').focus(), 120);
+    });
+  });
+
+  document.getElementById('form-close').addEventListener('click', () => closeModal(formScrim));
+  document.getElementById('form-cancel').addEventListener('click', () => closeModal(formScrim));
+  document.getElementById('success-close').addEventListener('click', () => closeModal(formScrim));
+  formScrim.addEventListener('click', (e) => { if (e.target === formScrim) closeModal(formScrim); });
+
+  // Esc closes
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (soonScrim.classList.contains('open')) closeModal(soonScrim);
+      if (formScrim.classList.contains('open')) closeModal(formScrim);
+    }
+  });
+
+  function openModal(el) {
+    el.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(el) {
+    el.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Validation + submit
+  const form = document.getElementById('contact-form');
+  const nameInput = document.getElementById('name');
+  const emailInput = document.getElementById('email');
+  const sourceInput = document.getElementById('source');
+  const destInput = document.getElementById('dest');
+
+  // Strict-ish email regex (RFC-flavored, practical)
+  const EMAIL_RE = /^[^\s@]+@[^\s@.]+\.[^\s@]{2,}$/;
+
+  // --- IBAN validation: format + mod-97 check ---
+  function validateIBAN(raw) {
+    const v = String(raw || '').replace(/\s+/g, '').toUpperCase();
+    if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(v)) return false;
+    if (v.length < 15 || v.length > 34) return false;
+    // Move first 4 chars to the end, then convert letters to numbers (A=10..Z=35)
+    const rearranged = v.slice(4) + v.slice(0, 4);
+    let numeric = '';
+    for (const ch of rearranged) {
+      const code = ch.charCodeAt(0);
+      if (code >= 48 && code <= 57)      numeric += ch;          // 0-9
+      else if (code >= 65 && code <= 90) numeric += (code - 55); // A-Z
+      else return false;
+    }
+    // Compute mod 97 in chunks (numeric can be huge)
+    let remainder = 0;
+    for (let i = 0; i < numeric.length; i += 7) {
+      remainder = parseInt(String(remainder) + numeric.substr(i, 7), 10) % 97;
+    }
+    return remainder === 1;
+  }
+
+  // --- Crypto address validation (common networks) ---
+  const CRYPTO_PATTERNS = [
+    /^0x[a-fA-F0-9]{40}$/,                          // ETH / EVM (BSC, Polygon, etc.)
+    /^bc1[ac-hj-np-z02-9]{6,87}$/i,                 // BTC bech32 (SegWit)
+    /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/,            // BTC legacy / P2SH
+    /^T[1-9A-HJ-NP-Za-km-z]{33}$/,                  // Tron
+    /^L[a-km-zA-HJ-NP-Z1-9]{26,33}$/,               // Litecoin legacy
+    /^ltc1[ac-hj-np-z02-9]{6,87}$/i,                // Litecoin bech32
+    /^r[rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{24,34}$/, // XRP
+    /^addr1[a-z0-9]{50,120}$/i,                     // Cardano Shelley
+    /^[1-9A-HJ-NP-Za-km-z]{32,44}$/                 // Solana / generic base58 (loose; keep last)
+  ];
+  function validateCryptoAddress(raw) {
+    const v = String(raw || '').trim();
+    if (v.length < 25 || v.length > 130) return false;
+    return CRYPTO_PATTERNS.some(re => re.test(v));
+  }
+
+  function validateName() {
+    const v = nameInput.value.trim();
+    const ok = v.length >= 2 && /\s|\p{L}{2,}/u.test(v);
+    setFieldError('field-name', nameInput, !ok);
+    return ok;
+  }
+  function validateEmail() {
+    const v = emailInput.value.trim();
+    const ok = EMAIL_RE.test(v);
+    setFieldError('field-email', emailInput, !ok);
+    return ok;
+  }
+  function validateWallet(input, fieldId, errElId) {
+    const kind = input.dataset.kind;
+    const v = input.value.trim();
+    let ok = false, msg = '';
+    if (kind === 'iban') {
+      ok = validateIBAN(v);
+      msg = ok ? '' : 'Érvénytelen IBAN szám. Ellenőrizd a formátumot és az ellenőrző jegyeket.';
+    } else if (kind === 'crypto') {
+      ok = validateCryptoAddress(v);
+      msg = ok ? '' : 'Érvénytelen pénztárca cím. Támogatott: BTC, ETH/EVM, Tron, Solana, Litecoin, XRP, Cardano.';
+    }
+    document.getElementById(errElId).textContent = msg;
+    setFieldError(fieldId, input, !ok);
+    return ok;
+  }
+  function setFieldError(fieldId, input, hasError) {
+    const f = document.getElementById(fieldId);
+    f.classList.toggle('error', hasError);
+    input.classList.toggle('invalid', hasError);
+  }
+
+  nameInput.addEventListener('input', () => {
+    if (document.getElementById('field-name').classList.contains('error')) validateName();
+  });
+  emailInput.addEventListener('input', () => {
+    if (document.getElementById('field-email').classList.contains('error')) validateEmail();
+  });
+  sourceInput.addEventListener('input', () => {
+    if (document.getElementById('field-source').classList.contains('error')) validateWallet(sourceInput, 'field-source', 'source-err');
+    resetTrust('source');
+  });
+  destInput.addEventListener('input', () => {
+    if (document.getElementById('field-dest').classList.contains('error')) validateWallet(destInput, 'field-dest', 'dest-err');
+    resetTrust('dest');
+  });
+
+  // Run trust check on blur if format is valid and it's a crypto field
+  sourceInput.addEventListener('blur', () => maybeRunTrustCheck('source'));
+  destInput.addEventListener('blur', () => maybeRunTrustCheck('dest'));
+  document.getElementById('source-recheck').addEventListener('click', () => runTrustCheck('source', true));
+  document.getElementById('dest-recheck').addEventListener('click', () => runTrustCheck('dest', true));
+
+  // --- Trust check (AI-based heuristic) ---
+  const trustState = { source: { state: 'idle', address: '' }, dest: { state: 'idle', address: '' } };
+  const trustRoles = { source: 'forrás (ahonnan az utalást várják)', dest: 'cél (ahova utalna)' };
+
+  function trustEl(which) {
+    return {
+      box:   document.getElementById(which + '-trust'),
+      label: document.getElementById(which + '-trust-label'),
+      msg:   document.getElementById(which + '-trust-msg')
+    };
+  }
+
+  function resetTrust(which) {
+    const t = trustEl(which);
+    t.box.classList.remove('show', 'checking', 'ok', 'caution', 'danger', 'unknown');
+    trustState[which] = { state: 'idle', address: '' };
+    updateDisclaimerVisibility();
+  }
+
+  function updateDisclaimerVisibility() {
+    const any = ['source','dest'].some(w => trustState[w].state !== 'idle');
+    document.getElementById('trust-disclaimer').style.display = any ? 'flex' : 'none';
+  }
+
+  function maybeRunTrustCheck(which) {
+    const input = which === 'source' ? sourceInput : destInput;
+    if (input.dataset.kind !== 'crypto') return;
+    const v = input.value.trim();
+    if (!v) return;
+    if (!validateCryptoAddress(v)) return;
+    if (trustState[which].address === v && trustState[which].state !== 'idle') return;
+    runTrustCheck(which, false);
+  }
+
+  async function runTrustCheck(which, force) {
+    const input = which === 'source' ? sourceInput : destInput;
+    if (input.dataset.kind !== 'crypto') return;
+    const v = input.value.trim();
+    if (!validateCryptoAddress(v)) return;
+    if (!force && trustState[which].address === v && trustState[which].state !== 'idle') return;
+
+    const t = trustEl(which);
+    t.box.classList.remove('ok', 'caution', 'danger', 'unknown');
+    t.box.classList.add('show', 'checking');
+    t.label.textContent = 'Ellenőrzés';
+    t.msg.textContent = 'Megbízhatóság-ellenőrzés folyamatban…';
+    trustState[which] = { state: 'checking', address: v };
+    updateDisclaimerVisibility();
+
+    const prompt =
+`You are a crypto AML risk screener. Assess the given wallet address for trust/reputation signals.
+Respond ONLY with a strict JSON object, no markdown, no commentary.
+
+Schema:
+{
+  "verdict": "ok" | "caution" | "danger" | "unknown",
+  "network": short network name (e.g. "Bitcoin", "Ethereum", "Solana", "Tron"),
+  "reason_hu": one short Hungarian sentence (max 18 words) explaining the verdict
+}
+
+Guidance:
+- "ok" = format valid, no known issues, neutral.
+- "caution" = looks like a CEX hot wallet, vanity address, or pattern that warrants human review.
+- "danger" = matches a known scam/sanctioned/hacked/mixer address pattern you are confident about.
+- "unknown" = format unrecognized or you cannot assess.
+- Do NOT invent specific incidents. If unsure, use "ok" with a neutral reason.
+
+Address to assess: ${v}
+Role in transaction: ${trustRoles[which]}`;
+
+    let result = null;
+    try {
+      const raw = await window.claude.complete(prompt);
+      let jsonStr = String(raw).trim();
+      const m = jsonStr.match(/\{[\s\S]*\}/);
+      if (m) jsonStr = m[0];
+      result = JSON.parse(jsonStr);
+    } catch (err) {
+      result = { verdict: 'unknown', network: '', reason_hu: 'Az ellenőrzés most nem elérhető. Kérlek próbáld újra.' };
+    }
+
+    const verdict = ['ok','caution','danger','unknown'].includes(result.verdict) ? result.verdict : 'unknown';
+    const network = (result.network || '').toString().slice(0, 30);
+    const reason  = (result.reason_hu || '').toString().slice(0, 200);
+
+    t.box.classList.remove('checking', 'ok', 'caution', 'danger', 'unknown');
+    t.box.classList.add(verdict);
+    const verdictLabels = {
+      ok: 'Megbízható',
+      caution: 'Körültekintés',
+      danger: 'Gyanús',
+      unknown: 'Ismeretlen'
+    };
+    t.label.textContent = (network ? network + ' · ' : '') + verdictLabels[verdict];
+    t.msg.textContent = reason || 'Nincs részletes információ.';
+    trustState[which] = { state: verdict, address: v };
+    updateDisclaimerVisibility();
+  }
+
+  function trustSummary(which) {
+    const s = trustState[which];
+    if (!s || s.state === 'idle') return 'nincs ellenőrizve (IBAN vagy nem ellenőrzött)';
+    const map = { checking: 'folyamatban', ok: 'megbízható', caution: 'körültekintés', danger: 'gyanús', unknown: 'ismeretlen' };
+    return map[s.state] || s.state;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const okName = validateName();
+    const okEmail = validateEmail();
+    const okSource = validateWallet(sourceInput, 'field-source', 'source-err');
+    const okDest = validateWallet(destInput, 'field-dest', 'dest-err');
+    if (!okName || !okEmail || !okSource || !okDest) {
+      if (!okName) nameInput.focus();
+      else if (!okEmail) emailInput.focus();
+      else if (!okSource) sourceInput.focus();
+      else destInput.focus();
+      return;
+    }
+
+    const name = nameInput.value.trim();
+    const email = emailInput.value.trim();
+    const meta = FLOW_META[currentFlow];
+    const flowLabel = meta.label;
+    const sourceVal = sourceInput.value.trim();
+    const destVal = destInput.value.trim();
+
+    const payload = {
+      name,
+      email,
+      flow: flowLabel,
+      sourceLabel: meta.source.label,
+      source: sourceVal,
+      destLabel: meta.dest.label,
+      dest: destVal,
+      sourceTrust: trustSummary('source'),
+      destTrust: trustSummary('dest'),
+      website: '' // honeypot – ne töltsd ki, csak botoknak
+    };
+
+    // Submit gomb állapot
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const origLabel = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Küldés…';
+
+    let backendOk = false;
+    let backendErr = '';
+    try {
+      const res = await fetch('backend/send.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        backendOk = !!data.ok;
+        if (!backendOk) backendErr = data.error || 'Ismeretlen szerver válasz.';
+      } else {
+        const data = await res.json().catch(() => ({}));
+        backendErr = data.error || ('HTTP ' + res.status);
+      }
+    } catch (err) {
+      backendErr = 'A szerver nem elérhető.';
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = origLabel;
+
+    if (backendOk) {
+      // Siker – nincs szükség mailto-ra
+      formState.classList.add('hide');
+      successState.classList.add('show');
+      return;
+    }
+
+    // Fallback: mailto (ha a backend még nincs telepítve / hiba)
+    console.warn('Backend küldés nem sikerült, mailto fallback:', backendErr);
+
+    const subject = `CryptoValid érdeklődés — ${flowLabel}`;
+    const body =
+`Üdv!
+
+Érdeklődöm a következő szolgáltatás iránt: ${flowLabel}
+
+Név:    ${name}
+E-mail: ${email}
+
+${meta.source.label}: ${sourceVal}
+${meta.dest.label}:   ${destVal}
+
+Előzetes megbízhatóság-ellenőrzés:
+  Forrás: ${trustSummary('source')}
+  Cél:    ${trustSummary('dest')}
+
+Kérlek vegyétek fel velem a kapcsolatot.
+
+Üdvözlettel,
+${name}`;
+
+    const mailto = `mailto:info@cryptovalid.eu?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+
+    formState.classList.add('hide');
+    successState.classList.add('show');
+  });
+</script>
+
+</body>
+</html>
