@@ -2,8 +2,6 @@
 backend/config.php
 backend/send.log
 backend/vendor/
-backend/PHPMailer/
-
 # OS / editor
 .DS_Store
 Thumbs.db
